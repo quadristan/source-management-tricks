@@ -1,6 +1,14 @@
-import sys, getopt, os, math, io, re, subprocess, functools
+import sys
+import getopt
+import os
+import math
+import io
+import re
+import subprocess
+import functools
 from datetime import date
 from datetime import timedelta
+
 
 def run_analysis(directory, fromDate: date, toDate: date, deltaTime: int):
     delta = toDate - fromDate
@@ -20,30 +28,35 @@ def run_analysis(directory, fromDate: date, toDate: date, deltaTime: int):
                 [
                     "git",
                     "log",
-                    "--numstat", 
+                    "--numstat",
                     "--format=",
                     "--since=" + rowDateStart.isoformat(),
                     "--before=" + rowDateEnd.isoformat(),
                     folder,
                 ],
-                stdout=subprocess.PIPE
+                stdout=subprocess.PIPE,
             )
-            added=0
-            deleted=0
-            for nline in io.TextIOWrapper(process.stdout, encoding="utf-8"):  # or another encoding
-                 # Sum all the files modifications
-                match = re.search('^(\d+)\s+(\d+)\s+(.*)\s*$',nline) 
-                added =+  int(match.group(1))
-                deleted +=   int(match.group(2))
+            added = 0
+            deleted = 0
+            # or another encoding
+            for nline in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                # Sum all the files modifications
+                match = re.search("^(\d+|\-)\s+(\d+|-)\s+(.*)\s*$", nline)
+                addedStr = match.group(1)
+                deletedStr = match.group(2)
+                if addedStr != "-":
+                    added += int(addedStr)
+                if deletedStr != "-":
+                    deleted += int(deletedStr)
 
-            rowStr += str(added)+ ","
+            rowStr += str(added) + ","
         print(rowStr)
 
 
 def main(argv):
     directory = "."
     toDate = date.today()
-    fromDate = toDate - timedelta(days=365)
+    fromDate = toDate - timedelta(days=365 * 2)
     delta = 30
 
     opts, args = getopt.getopt(argv, "hd:f:t:d:", ["dir=", "from=", "to=", "delta="])
